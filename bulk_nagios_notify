@@ -1,0 +1,40 @@
+#!/bin/bash
+
+SERVER_LIST=./serverlist
+NAGIOS_CMD=/var/spool/nagios/cmd/nagios.cmd
+ACTION="${1}"
+
+function err_exit {
+    echo "${@}" 1>&2
+    exit 1
+}
+
+[ ! -e "${SERVER_LIST}" ] \
+    && err_exit "not found server list."
+[ ! -e "${NAGIOS_CMD}" ] \
+    && err_exit "not found nagios cmd."
+
+[ "${ACTION}" = disable -o "${ACTION}" = enable ] \
+    || err_exit "require enable or disable action."
+
+if [ "${ACTION}" = disable ]
+then
+    FLAG1=DISABLE_HOST_SVC_NOTIFICATIONS
+    FLAG2=DISABLE_HOST_NOTIFICATIONS
+elif [ "${ACTION}" = enable ]
+then
+    FLAG1=ENABLE_HOST_SVC_NOTIFICATIONS
+    FLAG2=ENABLE_HOST_NOTIFICATIONS
+fi
+
+cat ${SERVER_LIST} | while read host
+do
+    echo "set ${FLAG1} for ${host}"
+    now=`date +%s`; printf "[%lu] ${FLAG1};${host}\n" $now > ${NAGIOS_CMD}
+    sleep 1
+    echo "set ${FLAG2} for ${host}"
+    now=`date +%s`; printf "[%lu] ${FLAG2};${host}\n" $now > ${NAGIOS_CMD}
+    sleep 1
+done
+
+exit 0
