@@ -1,0 +1,37 @@
+#!/bin/sh
+
+ACTION="${1}"
+SSH_USER=youname
+SSH_HOST=your-proxy.example.com
+SSH_PORT=11111
+LOCAL_PORT=10080
+
+kill_ssh() {
+    pkill -9 -f "ssh -N -f -D ${LOCAL_PORT} -p${SSH_PORT}"
+}
+
+refresh_ssh() {
+    kill_ssh
+    ssh -N -f -D ${LOCAL_PORT} -p${SSH_PORT} ${SSH_USER}@${SSH_HOST}
+}
+
+setting_socks() {
+    networksetup -setsocksfirewallproxystate "Apple USB Ethernet Adapter" ${ACTION}
+    networksetup -setsocksfirewallproxystate "Wi-Fi" ${ACTION}
+}
+
+if [ "${ACTION}" = on ]
+then
+    echo "setting..."
+    refresh_ssh
+elif [ "${ACTION}" = off ]
+then
+    echo "unsetting..."
+    kill_ssh
+else
+    echo "require action [on/off]."
+    exit 1
+fi
+
+setting_socks
+exit 0
